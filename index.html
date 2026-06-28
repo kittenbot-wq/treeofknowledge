@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#dff3fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Peptide Log">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon192.png">
+<title>KittenBot Labs — Peptide Tracker</title>
+<style>
+  :root {
+    --sky: #eaf8fe; --sky-2: #d6f0fb;
+    --aqua: #36c6e6; --aqua-deep: #1ba7cf; --teal: #4fd0c4;
+    --blush: #ff9fd0; --lilac: #c9b6ff;
+    --glass: rgba(255,255,255,0.72); --glass-line: rgba(255,255,255,0.9);
+    --ink: #2a4a57; --ink-soft: #5e8090;
+    --good: #34c9b0; --meh: #ffc15e; --bad: #ff7a8a;
+    --font: 'Segoe UI', 'Helvetica Neue', 'Frutiger', 'Avenir Next', system-ui, -apple-system, sans-serif;
+    --shadow: 0 10px 30px rgba(40,150,190,0.16); --shadow-soft: 0 6px 18px rgba(40,150,190,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font); color: var(--ink); line-height: 1.5; min-height: 100vh; padding-bottom: 30px;
+    background:
+      radial-gradient(1100px 500px at 85% -5%, rgba(201,182,255,0.35), transparent),
+      radial-gradient(900px 500px at 0% 12%, rgba(79,208,196,0.28), transparent),
+      radial-gradient(1000px 700px at 50% 110%, rgba(255,159,208,0.18), transparent),
+      linear-gradient(180deg, var(--sky), var(--sky-2));
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+
+  .banner-link { display: block; margin: 0 0 22px; text-decoration: none; }
+  .banner { position: relative; width: 100%; border-radius: 0 0 28px 28px; overflow: hidden; aspect-ratio: 1376 / 768; box-shadow: 0 0 0 1px rgba(255,255,255,0.6), 0 14px 40px rgba(120,90,220,0.28), 0 0 60px rgba(80,200,230,0.30); }
+  .banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .banner::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(420px 300px at 50% 62%, rgba(255,255,255,0.28), transparent 70%); mix-blend-mode: screen; }
+  .banner::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 40px rgba(120,220,255,0.45), inset 0 0 4px rgba(255,255,255,0.8); }
+
+  .glass { background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--glass-line); border-radius: 24px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+  .glass h2 { margin: 0 0 16px; font-size: 15px; font-weight: 700; letter-spacing: .3px; color: var(--aqua-deep); display: flex; align-items: center; gap: 9px; }
+  .glass h2 .bub { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--aqua) 80%); box-shadow: 0 0 10px rgba(54,198,230,0.6); }
+
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-soft); margin: 14px 0 6px; }
+  input, select, textarea { width: 100%; font-family: var(--font); font-size: 15px; color: var(--ink); background: rgba(255,255,255,0.85); border: 1px solid rgba(120,200,225,0.5); padding: 11px 13px; border-radius: 14px; transition: .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--aqua); box-shadow: 0 0 0 4px rgba(54,198,230,0.18); background: #fff; }
+  input::placeholder, textarea::placeholder { color: #a9c4cf; }
+  textarea { resize: vertical; min-height: 50px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+  .hidden { display: none !important; }
+
+  .weight .wrow { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+  .kgout { font-size: 13px; color: var(--ink-soft); margin-top: 8px; min-height: 18px; }
+  .kgout b { color: var(--aqua-deep); }
+  .trend { font-weight: 700; margin-left: 6px; }
+  .trend.up { color: var(--bad); } .trend.down { color: var(--good); } .trend.same { color: var(--ink-soft); }
+  .wbtn { border: none; cursor: pointer; font-family: var(--font); font-weight: 700; font-size: 14px; color: #fff; padding: 11px 18px; border-radius: 14px; white-space: nowrap; background: linear-gradient(135deg, var(--teal), var(--aqua)); box-shadow: var(--shadow-soft); }
+  .wbtn:active { transform: translateY(1px); }
+
+  .chart-wrap { margin-top: 16px; background: rgba(255,255,255,0.5); border-radius: 18px; padding: 14px 10px 6px; border: 1px solid var(--glass-line); }
+  .chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart-empty { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 20px; }
+
+  .ratewrap { display: flex; gap: 8px; margin-top: 6px; }
+  .ratewrap button { flex: 1; padding: 10px 0; border-radius: 14px; cursor: pointer; font-family: var(--font); border: 1px solid rgba(120,200,225,0.5); background: rgba(255,255,255,0.7); color: var(--ink-soft); font-size: 13px; font-weight: 600; transition: .12s; }
+  .ratewrap button[aria-pressed="true"] { color: #fff; border-color: transparent; }
+  .ratewrap button[data-r="bad"][aria-pressed="true"]  { background: var(--bad); }
+  .ratewrap button[data-r="meh"][aria-pressed="true"]  { background: var(--meh); }
+  .ratewrap button[data-r="good"][aria-pressed="true"] { background: var(--good); }
+
+  .save { margin-top: 18px; width: 100%; padding: 14px; cursor: pointer; border: none; border-radius: 16px; font-family: var(--font); font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .3px; background: linear-gradient(135deg, var(--blush), var(--lilac) 60%, var(--aqua)); box-shadow: var(--shadow-soft); }
+  .save:active { transform: translateY(1px); }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .toolbar select { width: auto; flex: 1; min-width: 130px; }
+  .count { font-size: 12px; color: var(--ink-soft); }
+  .empty { color: var(--ink-soft); font-size: 14px; text-align: center; padding: 34px 12px; border: 1.5px dashed rgba(120,200,225,0.6); border-radius: 18px; background: rgba(255,255,255,0.4); }
+
+  /* injection card */
+  .report { position: relative; border-radius: 20px; padding: 16px 16px 16px 20px; margin-bottom: 14px; background: rgba(255,255,255,0.82); border: 1px solid var(--glass-line); box-shadow: var(--shadow-soft); overflow: hidden; }
+  .report .edge { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 6px 0 0 6px; }
+  .report.good .edge { background: var(--good); box-shadow: 0 0 14px rgba(52,201,176,.6); }
+  .report.meh  .edge { background: var(--meh); box-shadow: 0 0 14px rgba(255,193,94,.6); }
+  .report.bad  .edge { background: var(--bad); box-shadow: 0 0 14px rgba(255,122,138,.6); }
+  .report .rtop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .report .cmp { font-size: 17px; font-weight: 700; color: var(--ink); }
+  .report .dose { color: var(--aqua-deep); font-weight: 700; font-size: 14px; margin-left: 4px; }
+  .report .when { font-size: 12px; color: var(--ink-soft); }
+  .report .fields { margin-top: 10px; display: grid; gap: 9px; }
+  .report .f { font-size: 13.5px; }
+  .report .f .k { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink-soft); margin-bottom: 1px; }
+  .report .f.warn .v { color: #d98a2b; font-weight: 600; }
+  .report .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .pill.none { background: rgba(52,201,176,.15); color: #1f9e89; }
+  .pill.mild { background: rgba(255,193,94,.18); color: #c8861f; }
+  .pill.mod  { background: rgba(255,160,90,.2); color: #cf6a1f; }
+  .pill.bad  { background: rgba(255,122,138,.18); color: #d4495c; }
+  .report .del { position: absolute; right: 12px; bottom: 12px; background: transparent; cursor: pointer; border: 1px solid rgba(120,200,225,0.5); color: var(--ink-soft); border-radius: 10px; font-size: 11px; padding: 4px 9px; font-family: var(--font); }
+  .report .del:hover { color: var(--bad); border-color: var(--bad); }
+
+  /* slim weight card */
+  .wcard { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border-radius: 16px; padding: 11px 14px 11px 18px; margin-bottom: 14px;
+    background: rgba(236,250,254,0.7); border: 1px dashed rgba(79,208,196,0.55); box-shadow: var(--shadow-soft); }
+  .wcard .wedge { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-radius: 5px 0 0 5px; background: var(--teal); box-shadow: 0 0 12px rgba(79,208,196,.55); }
+  .wcard .wleft { display: flex; flex-direction: column; gap: 1px; }
+  .wcard .wtag { font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--teal); }
+  .wcard .wdate { font-size: 11.5px; color: var(--ink-soft); }
+  .wcard .wright { display: flex; align-items: center; gap: 10px; }
+  .wcard .wval { font-weight: 700; font-size: 15px; color: var(--ink); white-space: nowrap; }
+  .wcard .wval small { font-weight: 600; color: var(--aqua-deep); }
+  .wcard .wdel { background: transparent; border: 1px solid rgba(120,200,225,0.5); color: var(--ink-soft); border-radius: 9px; font-size: 11px; padding: 3px 8px; cursor: pointer; font-family: var(--font); }
+  .wcard .wdel:hover { color: var(--bad); border-color: var(--bad); }
+
+  .pager { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 8px; }
+  .pager button { background: rgba(255,255,255,0.8); border: 1px solid rgba(120,200,225,0.5); color: var(--aqua-deep); font-family: var(--font); font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 12px; cursor: pointer; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .pinfo { font-size: 12.5px; color: var(--ink-soft); }
+
+  .foot { margin-top: 16px; display: flex; gap: 9px; flex-wrap: wrap; }
+  .foot button { background: rgba(255,255,255,0.7); border: 1px solid rgba(120,200,225,0.5); color: var(--ink-soft); font-family: var(--font); font-size: 12px; font-weight: 600; padding: 9px 13px; border-radius: 12px; cursor: pointer; }
+  .foot button:hover { color: var(--aqua-deep); border-color: var(--aqua); }
+  .note { margin-top: 14px; font-size: 11.5px; color: var(--ink-soft); line-height: 1.65; border-top: 1px solid rgba(120,200,225,0.35); padding-top: 12px; }
+
+  .showcase .vidframe { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.7), 0 12px 34px rgba(80,200,230,0.35), 0 0 50px rgba(201,182,255,0.4); }
+  .showcase iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .showcase p.cap { margin: 0 0 14px; font-size: 13px; color: var(--ink-soft); }
+
+  .home { text-align: center; margin: 26px 0 0; }
+  .home a { display: inline-block; text-decoration: none; font-weight: 700; font-size: 14px; color: #fff; padding: 13px 26px; border-radius: 999px; letter-spacing: .3px; background: linear-gradient(135deg, var(--aqua), var(--lilac)); box-shadow: 0 8px 22px rgba(120,160,230,0.4), 0 0 22px rgba(80,200,230,0.35); }
+  .home a:active { transform: translateY(1px); }
+
+  .install { display: none; width: 100%; margin: 0 0 18px; padding: 13px; cursor: pointer; font-family: var(--font); font-size: 13.5px; font-weight: 700; color: var(--aqua-deep); letter-spacing: .3px; border: 1px solid var(--aqua); border-radius: 16px; background: rgba(255,255,255,0.6); }
+</style>
+</head>
+<body>
+
+<a class="banner-link" href="https://share.google/G5qEMyEFzHaSgeNyD" target="_blank" rel="noopener" aria-label="KittenBot Labs">
+  <div class="banner"><img src="banner.png" alt="KittenBot Labs — Peptide Tracker"></div>
+</a>
+
+<div class="wrap">
+
+  <button class="install" id="installBtn">⬇ Install as an app on this device</button>
+
+  <!-- WEIGHT: input + chart only (stays compact) -->
+  <section class="glass weight">
+    <h2><span class="bub"></span> Weight tracker</h2>
+    <div class="wrow">
+      <div>
+        <label for="wlb">Weight (lb)</label>
+        <input id="wlb" type="number" step="any" inputmode="decimal">
+      </div>
+      <button class="wbtn" id="wsave">Log weight</button>
+    </div>
+    <div class="kgout" id="kgout"></div>
+    <div class="chart-wrap" id="chartWrap">
+      <div class="chart-empty" id="chartEmpty">Your weight trend will appear here once you log a few entries.</div>
+      <svg id="chart" viewBox="0 0 320 140" preserveAspectRatio="none" class="hidden"></svg>
+    </div>
+  </section>
+
+  <!-- LOG INJECTION -->
+  <section class="glass">
+    <h2><span class="bub"></span> Log an injection</h2>
+
+    <label for="cmp">Compound</label>
+    <select id="cmp">
+      <option value="" disabled selected>Select a compound…</option>
+      <option>Retatrutide</option><option>Melanotan I</option><option>Semax</option><option>Selank</option>
+      <option>GHK-Cu</option><option>BPC-157</option><option>TB-500</option><option>Epitalon</option>
+      <option>MOTS-c</option><option>NAD+</option><option>Oxytocin</option><option>Dihexa</option>
+      <option value="__other">Other…</option>
+    </select>
+    <input id="cmpOther" class="hidden" placeholder="Type compound name" autocomplete="off" style="margin-top:8px;">
+
+    <div class="row-3">
+      <div><label for="dose">Dose</label><input id="dose" type="number" step="any" inputmode="decimal" placeholder="e.g. 2" autocomplete="off"></div>
+      <div><label for="unit">Unit</label><select id="unit"><option>mg</option><option>mcg</option><option>IU</option><option>units</option><option>ml</option></select></div>
+    </div>
+
+    <div class="row">
+      <div><label for="date">Date</label><input id="date" type="date"></div>
+      <div><label for="time">Time</label><input id="time" type="time"></div>
+    </div>
+
+    <label for="benefits">Benefits / what you noticed</label>
+    <textarea id="benefits" placeholder="appetite, energy, mood, sleep, etc."></textarea>
+
+    <label for="side">Side effects</label>
+    <textarea id="side" placeholder="headache, injection site reaction, fatigue..."></textarea>
+
+    <label for="nausea">Nausea</label>
+    <select id="nausea">
+      <option value="none">None</option><option value="mild">Mild</option><option value="moderate">Moderate</option>
+      <option value="dry heaves">Dry heaves</option><option value="vomiting once">Vomiting once</option>
+      <option value="vomiting several times">Vomiting several times</option><option value="uncontrolled vomiting">Uncontrolled vomiting</option>
+    </select>
+
+    <label>Rating</label>
+    <div class="ratewrap" id="rate">
+      <button type="button" data-r="bad" aria-pressed="false">✕ bad</button>
+      <button type="button" data-r="meh" aria-pressed="false">~ meh</button>
+      <button type="button" data-r="good" aria-pressed="false">✓ good</button>
+    </div>
+
+    <button class="save" id="save">Save entry</button>
+  </section>
+
+  <!-- HISTORY (injections + weigh-ins interleaved) -->
+  <section class="glass">
+    <h2><span class="bub"></span> History</h2>
+    <div class="toolbar">
+      <select id="filter">
+        <option value="">All entries</option>
+        <option value="__inj">Injections only</option>
+        <option value="__wt">Weigh-ins only</option>
+      </select>
+      <select id="sort">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="dose-desc">Dose high→low</option>
+        <option value="dose-asc">Dose low→high</option>
+        <option value="rate">Rating worst→best</option>
+      </select>
+      <span class="count" id="count"></span>
+    </div>
+    <div id="log"></div>
+    <div class="pager" id="pager"></div>
+    <div class="foot">
+      <button id="export">⬇ Export JSON</button>
+      <button id="import">⬆ Import JSON</button>
+      <button id="clear">Clear all</button>
+      <input type="file" id="file" accept="application/json" hidden>
+    </div>
+    <p class="note">Your data lives on this device and goes nowhere else. Export regularly for a backup — clearing the app's data will erase the log. If a side-effect or nausea trend starts climbing, that's the log doing its job; take it to someone who can run your labs.</p>
+  </section>
+
+  <!-- SHOWCASE -->
+  <section class="glass showcase">
+    <h2><span class="bub"></span> Made with AI — KittenBot Labs</h2>
+    <p class="cap">Wanna see what I actually do with AI? ✨</p>
+    <div class="vidframe">
+      <iframe src="https://www.youtube.com/embed/gvwDqp0YTsc?rel=0" title="KittenBot Labs showcase" loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+  </section>
+
+  <div class="home">
+    <a href="https://kitt3nbot.com" target="_blank" rel="noopener">⤺ back to KittenBot Labs</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const KEY = 'kittenbot_peptide_log_v2';
+  const WKEY = 'kittenbot_weight_log_v2';
+  let entries = load(KEY);
+  let weights = load(WKEY);
+  let rating = '';
+  let page = 0; const PER = 7;
+  const $ = id => document.getElementById(id);
+
+  function load(k){ try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e){ return []; } }
+  function persist(){ localStorage.setItem(KEY, JSON.stringify(entries)); }
+  function persistW(){ localStorage.setItem(WKEY, JSON.stringify(weights)); }
+  function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  (function presetNow(){
+    const d = new Date(); const pad = n => String(n).padStart(2,'0');
+    $('date').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    $('time').value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  })();
+
+  /* compound dropdown + other */
+  $('cmp').addEventListener('change', () => {
+    const other = $('cmp').value === '__other';
+    $('cmpOther').classList.toggle('hidden', !other);
+    if(other) $('cmpOther').focus();
+  });
+  function compoundValue(){ return $('cmp').value === '__other' ? $('cmpOther').value.trim() : $('cmp').value; }
+
+  /* ---------- WEIGHT ---------- */
+  function sortedWeights(){ return [...weights].sort((a,b)=>a.t-b.t); }
+  function lastWeight(){ const s=sortedWeights(); return s.length ? s[s.length-1] : null; }
+  function shortDate(t){ return new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+  function fullDateTime(t){ const d=new Date(t); return DAYS[d.getDay()]+', '+d.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
+
+  function refreshWeightGhost(){
+    const lw = lastWeight();
+    if(lw){ $('wlb').placeholder = `${lw.lb} lb  ·  ${lw.kg} kg`; $('kgout').innerHTML = `last logged: <b>${lw.lb} lb</b> (${lw.kg} kg)`; }
+    else { $('wlb').placeholder = 'e.g. 159'; $('kgout').textContent = 'No weight logged yet.'; }
+  }
+  $('wlb').addEventListener('input', () => {
+    const v = parseFloat($('wlb').value);
+    if(!isNaN(v)){
+      const kg=(v*0.45359237).toFixed(1); const lw=lastWeight(); let trend='';
+      if(lw){ const diff=+(v-lw.lb).toFixed(1);
+        if(diff>0) trend=`<span class="trend up">▲ +${diff} lb</span>`;
+        else if(diff<0) trend=`<span class="trend down">▼ ${diff} lb</span>`;
+        else trend=`<span class="trend same">— no change</span>`; }
+      $('kgout').innerHTML = `= <b>${kg} kg</b>${trend}`;
+    } else refreshWeightGhost();
+  });
+  $('wsave').addEventListener('click', () => {
+    const v = parseFloat($('wlb').value);
+    if(isNaN(v)){ $('wlb').focus(); return; }
+    weights.push({ id:Date.now(), lb:+v.toFixed(1), kg:+(v*0.45359237).toFixed(1), t:Date.now() });
+    persistW(); $('wlb').value=''; refreshWeightGhost(); drawChartMaybe(); render();
+  });
+
+  function drawChartMaybe(){
+    const s = sortedWeights();
+    const chart=$('chart'), empty=$('chartEmpty');
+    if(s.length < 2){ chart.classList.add('hidden'); empty.classList.remove('hidden');
+      empty.textContent = s.length===0 ? 'Your weight trend will appear here once you log a few entries.' : 'Log one more weight to see the trend line.'; return; }
+    empty.classList.add('hidden'); chart.classList.remove('hidden');
+    const W=320,H=140,padL=34,padR=10,padT=12,padB=22;
+    const lbs=s.map(w=>w.lb); let min=Math.min(...lbs),max=Math.max(...lbs);
+    if(min===max){min-=2;max+=2;} else {const p=(max-min)*0.15;min-=p;max+=p;}
+    const x=i=>padL+(i/(s.length-1))*(W-padL-padR);
+    const y=v=>padT+(1-(v-min)/(max-min))*(H-padT-padB);
+    const pts=s.map((w,i)=>[x(i),y(w.lb)]);
+    const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    const area=line+` L ${pts[pts.length-1][0].toFixed(1)} ${H-padB} L ${pts[0][0].toFixed(1)} ${H-padB} Z`;
+    const grid=[max,(max+min)/2,min].map(v=>{const yy=y(v).toFixed(1);
+      return `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="rgba(120,200,225,0.3)" stroke-width="1"/><text x="${padL-5}" y="${(+yy+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#5e8090" font-family="sans-serif">${v.toFixed(0)}</text>`;}).join('');
+    const xlab=`<text x="${x(0)}" y="${H-6}" text-anchor="start" font-size="8" fill="#5e8090" font-family="sans-serif">${shortDate(s[0].t)}</text><text x="${x(s.length-1)}" y="${H-6}" text-anchor="end" font-size="8" fill="#5e8090" font-family="sans-serif">${shortDate(s[s.length-1].t)}</text>`;
+    const dots=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#fff" stroke="#36c6e6" stroke-width="2"/>`).join('');
+    chart.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(54,198,230,0.35)"/><stop offset="100%" stop-color="rgba(54,198,230,0.02)"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#wg)"/><path d="${line}" fill="none" stroke="#36c6e6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlab}`;
+  }
+
+  /* ---------- RATING ---------- */
+  $('rate').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    rating = b.dataset.r; [...$('rate').children].forEach(x => x.setAttribute('aria-pressed', x===b));
+  });
+
+  /* ---------- SAVE INJECTION ---------- */
+  $('save').addEventListener('click', () => {
+    const cmp = compoundValue();
+    if(!cmp){ if($('cmp').value==='__other'){ $('cmpOther').focus(); $('cmpOther').style.borderColor='var(--bad)'; } else { $('cmp').focus(); $('cmp').style.borderColor='var(--bad)'; } return; }
+    $('cmp').style.borderColor=''; $('cmpOther').style.borderColor='';
+    entries.push({ id:Date.now(), cmp, dose:$('dose').value.trim(), unit:$('unit').value, date:$('date').value, time:$('time').value, benefits:$('benefits').value.trim(), side:$('side').value.trim(), nausea:$('nausea').value, rating });
+    persist();
+    $('cmp').value=''; $('cmpOther').value=''; $('cmpOther').classList.add('hidden');
+    ['dose','benefits','side'].forEach(f => $(f).value=''); $('nausea').value='none';
+    rating=''; [...$('rate').children].forEach(x=>x.setAttribute('aria-pressed',false));
+    page=0; render();
+  });
+
+  function injTime(e){ return new Date((e.date||'1970-01-01')+'T'+(e.time||'00:00')).getTime(); }
+  function fmtWhen(e){
+    if(!e.date) return '';
+    const d = new Date(e.date + 'T' + (e.time||'00:00'));
+    let s = DAYS[d.getDay()] + ', ' + d.toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' });
+    if(e.time) s += ' · ' + d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+    return s;
+  }
+  function nauseaPill(n){
+    if(!n || n==='none') return '<span class="pill none">no nausea</span>';
+    let cls='mild'; if(n==='moderate') cls='mod'; else if(n==='dry heaves'||n.startsWith('vomiting')) cls='bad';
+    return `<span class="pill ${cls}">${esc(n)}</span>`;
+  }
+
+  function injCard(e){
+    return `<div class="report ${e.rating||''}">
+      <span class="edge"></span>
+      <div class="rtop"><span class="cmp">${esc(e.cmp)}${e.dose?`<span class="dose">${esc(e.dose)} ${esc(e.unit)}</span>`:''}</span><span class="when">${fmtWhen(e)}</span></div>
+      <div class="fields">
+        <div class="f">${nauseaPill(e.nausea)}</div>
+        ${e.benefits?`<div class="f"><span class="k">benefits</span><span class="v">${esc(e.benefits)}</span></div>`:''}
+        ${e.side?`<div class="f warn"><span class="k">side effects</span><span class="v">${esc(e.side)}</span></div>`:''}
+      </div>
+      <button class="del" data-id="${e.id}">delete</button>
+    </div>`;
+  }
+  function wtCard(w, prev){
+    let tr='';
+    if(prev){ const d=+(w.lb-prev.lb).toFixed(1);
+      if(d>0) tr=`<span class="trend up">▲ +${d}</span>`;
+      else if(d<0) tr=`<span class="trend down">▼ ${d}</span>`;
+      else tr=`<span class="trend same">—</span>`; }
+    return `<div class="wcard">
+      <span class="wedge"></span>
+      <div class="wleft"><span class="wtag">⚖ weigh-in</span><span class="wdate">${fullDateTime(w.t)}</span></div>
+      <div class="wright"><span class="wval">${w.lb} lb <small>(${w.kg} kg)</small></span>${tr}<button class="wdel" data-wid="${w.id}">×</button></div>
+    </div>`;
+  }
+
+  function rebuildFilterCounts(){} // (filter is fixed list now)
+
+  function render(){
+    const filter=$('filter').value, sort=$('sort').value;
+    const doseOrRate = (sort==='dose-desc'||sort==='dose-asc'||sort==='rate');
+
+    // build unified list
+    let items = [];
+    if(filter !== '__wt'){
+      entries.forEach(e => items.push({ kind:'inj', t:injTime(e), data:e }));
+    }
+    if(filter !== '__inj' && !doseOrRate){ // weigh-ins only make sense in date sorts
+      // precompute prev weight for trend (chronological)
+      const sw = sortedWeights();
+      const prevMap = {};
+      sw.forEach((w,i)=> prevMap[w.id] = i>0 ? sw[i-1] : null);
+      weights.forEach(w => items.push({ kind:'wt', t:w.t, data:w, prev:prevMap[w.id] }));
+    }
+
+    const rOrder={bad:0,meh:1,good:2,'':3};
+    items.sort((a,b)=>{
+      switch(sort){
+        case 'date-asc': return a.t-b.t;
+        case 'dose-desc': return (parseFloat(b.data.dose)||0)-(parseFloat(a.data.dose)||0);
+        case 'dose-asc': return (parseFloat(a.data.dose)||0)-(parseFloat(b.data.dose)||0);
+        case 'rate': return rOrder[a.data.rating]-rOrder[b.data.rating];
+        default: return b.t-a.t;
+      }
+    });
+
+    const injCount = items.filter(i=>i.kind==='inj').length;
+    const wtCount = items.filter(i=>i.kind==='wt').length;
+    let label = [];
+    if(injCount) label.push(injCount+(injCount===1?' injection':' injections'));
+    if(wtCount) label.push(wtCount+(wtCount===1?' weigh-in':' weigh-ins'));
+    $('count').textContent = label.join(' · ');
+
+    const log=$('log');
+    if(!items.length){ log.innerHTML='<div class="empty">No entries yet. Log an injection or a weight above.</div>'; $('pager').innerHTML=''; return; }
+
+    const pages=Math.ceil(items.length/PER); if(page>=pages) page=pages-1;
+    const slice=items.slice(page*PER, page*PER+PER);
+    log.innerHTML = slice.map(it => it.kind==='inj' ? injCard(it.data) : wtCard(it.data, it.prev)).join('');
+
+    log.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click',()=>{ if(confirm('Delete this injection entry?')){ entries=entries.filter(x=>x.id!=btn.dataset.id); persist(); render(); } }));
+    log.querySelectorAll('.wdel').forEach(btn=>btn.addEventListener('click',()=>{ if(confirm('Delete this weight entry?')){ weights=weights.filter(x=>x.id!=btn.dataset.wid); persistW(); refreshWeightGhost(); drawChartMaybe(); render(); } }));
+
+    $('pager').innerHTML = pages>1 ? `<button id="prev" ${page===0?'disabled':''}>‹ prev</button><span class="pinfo">page ${page+1} of ${pages}</span><button id="next" ${page>=pages-1?'disabled':''}>next ›</button>` : '';
+    if(pages>1){ $('prev').addEventListener('click',()=>{ if(page>0){page--;render();} }); $('next').addEventListener('click',()=>{ if(page<pages-1){page++;render();} }); }
+  }
+  $('filter').addEventListener('change',()=>{page=0;render();});
+  $('sort').addEventListener('change',()=>{page=0;render();});
+
+  /* export / import */
+  $('export').addEventListener('click', () => {
+    const blob=new Blob([JSON.stringify({entries,weights},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='kittenbot-peptide-log-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  });
+  $('import').addEventListener('click',()=>$('file').click());
+  $('file').addEventListener('change', e=>{
+    const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{ try{
+      const data=JSON.parse(r.result); const inc=Array.isArray(data)?{entries:data,weights:[]}:data;
+      if(inc.entries){ const ids=new Set(entries.map(x=>x.id)); inc.entries.forEach(d=>{ if(!ids.has(d.id)) entries.push(d); }); }
+      if(inc.weights){ const ids=new Set(weights.map(x=>x.id||x.t)); inc.weights.forEach(d=>{ const k=d.id||d.t; if(!ids.has(k)){ if(!d.id) d.id=d.t||Date.now()+Math.random(); weights.push(d);} }); }
+      persist(); persistW(); refreshWeightGhost(); drawChartMaybe(); render();
+    }catch(err){ alert('That file could not be read as a valid log export.'); } };
+    r.readAsText(f);
+  });
+  $('clear').addEventListener('click',()=>{ if(confirm('Erase the entire log (injections + weight)? Export a backup first if you want to keep it.')){ entries=[]; weights=[]; persist(); persistW(); refreshWeightGhost(); drawChartMaybe(); render(); } });
+
+  if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+  let deferred;
+  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferred=e; $('installBtn').style.display='block'; });
+  $('installBtn').addEventListener('click', async ()=>{ if(!deferred) return; deferred.prompt(); await deferred.userChoice; deferred=null; $('installBtn').style.display='none'; });
+
+  refreshWeightGhost(); drawChartMaybe(); render();
+})();
+</script>
+</body>
+</html>
